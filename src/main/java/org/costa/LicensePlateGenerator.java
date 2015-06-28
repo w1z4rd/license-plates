@@ -19,7 +19,10 @@ public class LicensePlateGenerator {
 			"VS", "VL", "VN" };
 	private static String[] curseWords = { "MUE", "CUR", "SEX", "PZD", "PLM" };
 
+	private static List<String> licensePlates = new ArrayList<String>(83000000);
+
 	public static void main(String[] args) {
+		long startTime = System.currentTimeMillis();
 		ICombinatoricsVector<String> originalVector = Factory
 				.createVector(alphabet);
 		Generator<String> gen = Factory
@@ -29,12 +32,14 @@ public class LicensePlateGenerator {
 			int upperBound = getUpperBound(region);
 			for (int i = 1; i < upperBound; i++) {
 				for (String letters : lettersList) {
-					System.out.println(String
-							.format("%s-%02d-%s", new Object[] { region,
-									Integer.valueOf(i), letters }));
+					licensePlates.add(String.format("%s-%02d-%s", new Object[] {
+							region, Integer.valueOf(i), letters }));
 				}
 			}
 		}
+		long endTime = System.currentTimeMillis();
+		System.out.println(licensePlates.size());
+		System.out.println(endTime - startTime);
 	}
 
 	private static int getUpperBound(String region) {
@@ -46,7 +51,7 @@ public class LicensePlateGenerator {
 	}
 
 	private static List<String> filterChars(Generator<String> gen) {
-		List<String> lettersList = new ArrayList();
+		List<String> lettersList = new ArrayList<String>();
 		for (ICombinatoricsVector<String> perm : gen) {
 			String letters = getChars(perm);
 			if (!letters.startsWith("I")) {

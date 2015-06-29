@@ -48,14 +48,16 @@ public class LicensePlatePipeline {
 	private static volatile BlockingQueue<String> licensePlates = new LinkedBlockingQueue<>(
 			82000000);
 
-	private static final String OUTPUT_FILE = "D:\\Coding\\license_plates1.txt";
+	private static final String OUTPUT_FILE = "target/license_plates1.txt";
 	private final static Charset ENCODING = StandardCharsets.UTF_8;
 	private final static Path path = Paths.get(OUTPUT_FILE);
 
 	private static CyclicBarrier barrier;
-	boolean done = false;
+	volatile boolean done = false;
+	static long startTime;
 
 	public static void main(String[] args) {
+		startTime = System.currentTimeMillis();
 		LicensePlatePipeline pipeline = new LicensePlatePipeline();
 		barrier = new CyclicBarrier(8, pipeline.new BarrierAction(
 				filtredLettersQueue));
@@ -268,8 +270,10 @@ public class LicensePlatePipeline {
 		public void run() {
 			try {
 				queue.take();
-				if (queue.isEmpty())
+				if (queue.isEmpty()) {
 					done = true;
+					System.out.println(System.currentTimeMillis() - startTime);
+				}
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}

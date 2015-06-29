@@ -16,8 +16,9 @@ import org.paukov.combinatorics.ICombinatoricsVector;
 
 public class LicensePlateGenerator {
 
-	private static final String OUTPUT_FILE = "D:\\Coding\\license_plates.txt";
-	private final static Charset ENCODING = StandardCharsets.UTF_8;
+	private static final String OUTPUT_FILE = "target/license_plates.txt";
+	private static final Charset ENCODING = StandardCharsets.UTF_8;
+	private static final Path path = Paths.get(OUTPUT_FILE);
 
 	private static String[] alphabet = { "A", "B", "C", "D", "E", "F", "G",
 			"H", "I", "J", "K", "L", "M", "N", "O", "P", "R", "S", "T", "U",
@@ -30,7 +31,7 @@ public class LicensePlateGenerator {
 	private static String[] curseWords = { "MUE", "CUR", "SEX", "PZD", "PLM" };
 
 	public static void main(String[] args) {
-		Path path = Paths.get(OUTPUT_FILE);
+
 		long startTime = System.currentTimeMillis();
 		ICombinatoricsVector<String> originalVector = Factory
 				.createVector(alphabet);
@@ -42,12 +43,9 @@ public class LicensePlateGenerator {
 				int upperBound = getUpperBound(region);
 				for (int i = 1; i < upperBound; i++) {
 					for (String letters : lettersList) {
-
 						writer.write(String.format("%s-%02d-%s", new Object[] {
 								region, Integer.valueOf(i), letters }));
-						// licensePlates.add(String.format("%s-%02d-%s", new
-						// Object[] {
-						// region, Integer.valueOf(i), letters }));
+						writer.newLine();
 					}
 				}
 

@@ -7,16 +7,18 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.BrokenBarrierException;
+import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import org.paukov.combinatorics.Factory;
 import org.paukov.combinatorics.Generator;
 import org.paukov.combinatorics.ICombinatoricsVector;
-//TODO: add cyclicbarrier to fix regions not getting all the plates
+
 public class LicensePlatePipeline {
+	// TODO: add cyclic barrier to fix regions not getting all the plates
 	// TODO: create a pipeline with the following stages:
 	// - generate letters (can't break this down - due to use of 3rd party lib)
 	// - split the list of generated letters into the number of cores / 2
@@ -50,57 +52,64 @@ public class LicensePlatePipeline {
 	private final static Charset ENCODING = StandardCharsets.UTF_8;
 	private final static Path path = Paths.get(OUTPUT_FILE);
 
+	private static CyclicBarrier barrier;
+	boolean done = false;
+
 	public static void main(String[] args) {
 		LicensePlatePipeline pipeline = new LicensePlatePipeline();
+		barrier = new CyclicBarrier(8, pipeline.new BarrierAction(
+				filtredLettersQueue));
 		Producer p = pipeline.new Producer(lettersQueue);
 		Filter filter1 = pipeline.new Filter(lettersQueue, filtredLettersQueue);
 		Filter filter2 = pipeline.new Filter(lettersQueue, filtredLettersQueue);
 		Filter filter3 = pipeline.new Filter(lettersQueue, filtredLettersQueue);
-		LicensePlate l1 = pipeline.new LicensePlate(filtredLettersQueue, 1,
-				100, REGIONS_A);
-		LicensePlate l2 = pipeline.new LicensePlate(filtredLettersQueue, 1,
-				100, REGIONS_B);
-		LicensePlate l3 = pipeline.new LicensePlate(filtredLettersQueue, 1,
-				100, REGIONS_C);
-		LicensePlate l4 = pipeline.new LicensePlate(filtredLettersQueue, 1,
-				100, REGIONS_D);
-		LicensePlate l5 = pipeline.new LicensePlate(filtredLettersQueue, 1,
-				250, BUCHAREST);
-		LicensePlate l6 = pipeline.new LicensePlate(filtredLettersQueue, 251,
-				500, BUCHAREST);
-		LicensePlate l7 = pipeline.new LicensePlate(filtredLettersQueue, 501,
-				750, BUCHAREST);
-		LicensePlate l8 = pipeline.new LicensePlate(filtredLettersQueue, 751,
-				999, BUCHAREST);
+		LicensePlate l1 = pipeline.new LicensePlate(filtredLettersQueue,
+				barrier, 1, 100, REGIONS_A);
+		LicensePlate l2 = pipeline.new LicensePlate(filtredLettersQueue,
+				barrier, 1, 100, REGIONS_B);
+		LicensePlate l3 = pipeline.new LicensePlate(filtredLettersQueue,
+				barrier, 1, 100, REGIONS_C);
+		LicensePlate l4 = pipeline.new LicensePlate(filtredLettersQueue,
+				barrier, 1, 100, REGIONS_D);
+		LicensePlate l5 = pipeline.new LicensePlate(filtredLettersQueue,
+				barrier, 1, 250, BUCHAREST);
+		LicensePlate l6 = pipeline.new LicensePlate(filtredLettersQueue,
+				barrier, 251, 500, BUCHAREST);
+		LicensePlate l7 = pipeline.new LicensePlate(filtredLettersQueue,
+				barrier, 501, 750, BUCHAREST);
+		LicensePlate l8 = pipeline.new LicensePlate(filtredLettersQueue,
+				barrier, 751, 999, BUCHAREST);
 		Observer o = pipeline.new Observer(licensePlates);
 
-		List<Job> jobs = new ArrayList<Job>();
-		jobs.add(p);
-		jobs.add(filter3);
-		jobs.add(filter2);
-		jobs.add(filter1);
-		jobs.add(l1);
-		jobs.add(l2);
-		jobs.add(l3);
-		jobs.add(l4);
-		jobs.add(l5);
-		jobs.add(l6);
-		jobs.add(l7);
-		jobs.add(l8);
-		jobs.add(o);
-
-		for (Job j : jobs) {
-			Thread t = new Thread(j);
-			t.start();
-		}
+		Thread producer = new Thread(p, "producer");
+		producer.start();
+		Thread filterOneThread = new Thread(filter1, "filterOne");
+		filterOneThread.start();
+		Thread filterTwoThread = new Thread(filter2, "filterTwo");
+		filterTwoThread.start();
+		Thread filterThreeThread = new Thread(filter3, "filterThree");
+		filterThreeThread.start();
+		Thread licenseThreadOne = new Thread(l1, "licenseOne");
+		licenseThreadOne.start();
+		Thread licenseThreadTwo = new Thread(l2, "licenseTwo");
+		licenseThreadTwo.start();
+		Thread licenseThreadThree = new Thread(l3, "licenseThree");
+		licenseThreadThree.start();
+		Thread licenseThreadFour = new Thread(l4, "licenseFour");
+		licenseThreadFour.start();
+		Thread licenseThreadFive = new Thread(l5, "licenseFive");
+		licenseThreadFive.start();
+		Thread licenseThreadSix = new Thread(l6, "licenseSix");
+		licenseThreadSix.start();
+		Thread licenseThreadSeven = new Thread(l7, "licenseSeven");
+		licenseThreadSeven.start();
+		Thread licenseThreadEight = new Thread(l8, "licenseEight");
+		licenseThreadEight.start();
+		Thread observer = new Thread(o, "observer");
+		observer.start();
 	}
 
 	public abstract class Job implements Runnable {
-		protected boolean running;
-
-		public void setRunning(boolean running) {
-			this.running = running;
-		}
 
 	}
 
@@ -110,7 +119,6 @@ public class LicensePlatePipeline {
 
 		public Observer(BlockingQueue<String> licensePlates) {
 			this.licensePlates = licensePlates;
-			setRunning(true);
 			try {
 				writer = Files.newBufferedWriter(path, ENCODING);
 			} catch (IOException e) {
@@ -120,9 +128,10 @@ public class LicensePlatePipeline {
 
 		@Override
 		public void run() {
-			while (running) {
+			while (!done) {
 				try {
 					writer.write(licensePlates.take());
+					writer.newLine();
 				} catch (InterruptedException | IOException ie) {
 					ie.printStackTrace();
 				}
@@ -135,7 +144,6 @@ public class LicensePlatePipeline {
 
 		public Producer(BlockingQueue<String> queue) {
 			this.queue = queue;
-			setRunning(true);
 		}
 
 		@Override
@@ -170,15 +178,16 @@ public class LicensePlatePipeline {
 		int lowerBound;
 		int upperBound;
 		BlockingQueue<String> queue;
+		CyclicBarrier barrier;
 
 		@Override
 		public void run() {
-			while (running) {
+			while (!done) {
 				try {
 					if (queue.isEmpty()) {
 						continue;
 					}
-					String letters = queue.take();
+					String letters = queue.peek();
 					for (String region : regions) {
 						for (int i = lowerBound; i < upperBound; i++) {
 							String licensePlate = (String.format("%s-%02d-%s",
@@ -187,19 +196,22 @@ public class LicensePlatePipeline {
 							licensePlates.put(licensePlate);
 						}
 					}
+					barrier.await();
 				} catch (InterruptedException e) {
+					e.printStackTrace();
+				} catch (BrokenBarrierException e) {
 					e.printStackTrace();
 				}
 			}
 		}
 
-		public LicensePlate(BlockingQueue<String> queue, int lowerBound,
-				int upperBound, String... regions) {
+		public LicensePlate(BlockingQueue<String> queue, CyclicBarrier barrier,
+				int lowerBound, int upperBound, String... regions) {
 			this.queue = queue;
 			this.regions = regions;
 			this.lowerBound = lowerBound;
 			this.upperBound = upperBound;
-			setRunning(true);
+			this.barrier = barrier;
 		}
 
 	}
@@ -208,25 +220,20 @@ public class LicensePlatePipeline {
 		BlockingQueue<String> letters;
 		BlockingQueue<String> filtered;
 
-		public void stop(boolean running) {
-			this.running = running;
-		}
-
 		public Filter(BlockingQueue<String> letters,
 				BlockingQueue<String> filtered) {
 			this.letters = letters;
 			this.filtered = filtered;
-			setRunning(true);
 		}
 
 		@Override
 		public void run() {
-			while (running) {
+			while (!done) {
 				try {
 					if (letters.isEmpty()) {
 						continue;
 					}
-					String license = letters.poll();
+					String license = letters.take();
 					if (license != null && !license.isEmpty() && check(license)) {
 						filtered.put(license);
 					}
@@ -247,6 +254,25 @@ public class LicensePlatePipeline {
 				}
 			}
 			return true;
+		}
+	}
+
+	public class BarrierAction implements Runnable {
+		BlockingQueue<String> queue;
+
+		public BarrierAction(BlockingQueue<String> queue) {
+			this.queue = queue;
+		}
+
+		@Override
+		public void run() {
+			try {
+				queue.take();
+				if (queue.isEmpty())
+					done = true;
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
 		}
 	}
 }

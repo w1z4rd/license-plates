@@ -18,16 +18,7 @@ import org.paukov.combinatorics.Generator;
 import org.paukov.combinatorics.ICombinatoricsVector;
 
 public class LicensePlatePipeline {
-	// TODO: add cyclic barrier to fix regions not getting all the plates
-	// TODO: create a pipeline with the following stages:
-	// - generate letters (can't break this down - due to use of 3rd party lib)
-	// - split the list of generated letters into the number of cores / 2
-	// - pass the sublists to instances of the filter
-	// - filter letters for curse words
-	// - create threads to spit out the whole number split by number regions
-	// (1-250 251-500 501-750 751-1000 or 1-100)
-	// - split the regions as well we have 41 of them (B) = 10 others so we have
-	// B / 10 / 10 / 10 / 10
+
 	private static String[] alphabet = { "A", "B", "C", "D", "E", "F", "G",
 			"H", "I", "J", "K", "L", "M", "N", "O", "P", "R", "S", "T", "U",
 			"V", "W", "X", "Y", "Z" };
@@ -111,11 +102,7 @@ public class LicensePlatePipeline {
 		observer.start();
 	}
 
-	public abstract class Job implements Runnable {
-
-	}
-
-	public class Observer extends Job {
+	public class Observer implements Runnable {
 		BlockingQueue<String> licensePlates;
 		BufferedWriter writer;
 
@@ -141,7 +128,7 @@ public class LicensePlatePipeline {
 		}
 	}
 
-	public class Producer extends Job {
+	public class Producer implements Runnable {
 		BlockingQueue<String> queue;
 
 		public Producer(BlockingQueue<String> queue) {
@@ -175,7 +162,7 @@ public class LicensePlatePipeline {
 
 	}
 
-	public class LicensePlate extends Job {
+	public class LicensePlate implements Runnable {
 		String[] regions;
 		int lowerBound;
 		int upperBound;
@@ -218,7 +205,7 @@ public class LicensePlatePipeline {
 
 	}
 
-	public class Filter extends Job {
+	public class Filter implements Runnable {
 		BlockingQueue<String> letters;
 		BlockingQueue<String> filtered;
 

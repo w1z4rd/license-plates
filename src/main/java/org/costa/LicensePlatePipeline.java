@@ -1,5 +1,12 @@
 package org.costa;
 
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
@@ -8,7 +15,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import org.paukov.combinatorics.Factory;
 import org.paukov.combinatorics.Generator;
 import org.paukov.combinatorics.ICombinatoricsVector;
-
+//TODO: add cyclicbarrier to fix regions not getting all the plates
 public class LicensePlatePipeline {
 	// TODO: create a pipeline with the following stages:
 	// - generate letters (can't break this down - due to use of 3rd party lib)
@@ -38,6 +45,10 @@ public class LicensePlatePipeline {
 	private static volatile BlockingQueue<String> filtredLettersQueue = new LinkedBlockingQueue<>();
 	private static volatile BlockingQueue<String> licensePlates = new LinkedBlockingQueue<>(
 			82000000);
+
+	private static final String OUTPUT_FILE = "D:\\Coding\\license_plates1.txt";
+	private final static Charset ENCODING = StandardCharsets.UTF_8;
+	private final static Path path = Paths.get(OUTPUT_FILE);
 
 	public static void main(String[] args) {
 		LicensePlatePipeline pipeline = new LicensePlatePipeline();
@@ -95,19 +106,24 @@ public class LicensePlatePipeline {
 
 	public class Observer extends Job {
 		BlockingQueue<String> licensePlates;
+		BufferedWriter writer;
 
 		public Observer(BlockingQueue<String> licensePlates) {
 			this.licensePlates = licensePlates;
 			setRunning(true);
+			try {
+				writer = Files.newBufferedWriter(path, ENCODING);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 		}
 
 		@Override
 		public void run() {
 			while (running) {
 				try {
-					System.out.println(licensePlates.size());
-					Thread.sleep(60000);
-				} catch (InterruptedException ie) {
+					writer.write(licensePlates.take());
+				} catch (InterruptedException | IOException ie) {
 					ie.printStackTrace();
 				}
 			}

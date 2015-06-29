@@ -1,5 +1,12 @@
 package org.costa;
 
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -8,6 +15,9 @@ import org.paukov.combinatorics.Generator;
 import org.paukov.combinatorics.ICombinatoricsVector;
 
 public class LicensePlateGenerator {
+
+	private static final String OUTPUT_FILE = "D:\\Coding\\license_plates.txt";
+	private final static Charset ENCODING = StandardCharsets.UTF_8;
 
 	private static String[] alphabet = { "A", "B", "C", "D", "E", "F", "G",
 			"H", "I", "J", "K", "L", "M", "N", "O", "P", "R", "S", "T", "U",
@@ -19,26 +29,34 @@ public class LicensePlateGenerator {
 			"VS", "VL", "VN" };
 	private static String[] curseWords = { "MUE", "CUR", "SEX", "PZD", "PLM" };
 
-	private static List<String> licensePlates = new ArrayList<String>(83000000);
-
 	public static void main(String[] args) {
+		Path path = Paths.get(OUTPUT_FILE);
 		long startTime = System.currentTimeMillis();
 		ICombinatoricsVector<String> originalVector = Factory
 				.createVector(alphabet);
 		Generator<String> gen = Factory
 				.createPermutationWithRepetitionGenerator(originalVector, 3);
 		List<String> lettersList = filterChars(gen);
-		for (String region : regions) {
-			int upperBound = getUpperBound(region);
-			for (int i = 1; i < upperBound; i++) {
-				for (String letters : lettersList) {
-					licensePlates.add(String.format("%s-%02d-%s", new Object[] {
-							region, Integer.valueOf(i), letters }));
+		try (BufferedWriter writer = Files.newBufferedWriter(path, ENCODING)) {
+			for (String region : regions) {
+				int upperBound = getUpperBound(region);
+				for (int i = 1; i < upperBound; i++) {
+					for (String letters : lettersList) {
+
+						writer.write(String.format("%s-%02d-%s", new Object[] {
+								region, Integer.valueOf(i), letters }));
+						// licensePlates.add(String.format("%s-%02d-%s", new
+						// Object[] {
+						// region, Integer.valueOf(i), letters }));
+					}
 				}
+
 			}
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
+
 		long endTime = System.currentTimeMillis();
-		System.out.println(licensePlates.size());
 		System.out.println(endTime - startTime);
 	}
 

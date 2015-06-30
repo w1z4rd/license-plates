@@ -44,35 +44,33 @@ public class LicensePlatePipeline {
 	private final static Path path = Paths.get(OUTPUT_FILE);
 
 	private static CyclicBarrier barrier;
-	volatile boolean done = false;
-	static long startTime;
+	private static volatile boolean done = false;
+	private static long startTime;
 
 	public static void main(String[] args) {
 		startTime = System.currentTimeMillis();
-		LicensePlatePipeline pipeline = new LicensePlatePipeline();
-		barrier = new CyclicBarrier(8, pipeline.new BarrierAction(
-				filtredLettersQueue));
-		Producer p = pipeline.new Producer(lettersQueue);
-		Filter filter1 = pipeline.new Filter(lettersQueue, filtredLettersQueue);
-		Filter filter2 = pipeline.new Filter(lettersQueue, filtredLettersQueue);
-		Filter filter3 = pipeline.new Filter(lettersQueue, filtredLettersQueue);
-		LicensePlate l1 = pipeline.new LicensePlate(filtredLettersQueue,
-				barrier, 1, 100, REGIONS_A);
-		LicensePlate l2 = pipeline.new LicensePlate(filtredLettersQueue,
-				barrier, 1, 100, REGIONS_B);
-		LicensePlate l3 = pipeline.new LicensePlate(filtredLettersQueue,
-				barrier, 1, 100, REGIONS_C);
-		LicensePlate l4 = pipeline.new LicensePlate(filtredLettersQueue,
-				barrier, 1, 100, REGIONS_D);
-		LicensePlate l5 = pipeline.new LicensePlate(filtredLettersQueue,
-				barrier, 1, 250, BUCHAREST);
-		LicensePlate l6 = pipeline.new LicensePlate(filtredLettersQueue,
-				barrier, 251, 500, BUCHAREST);
-		LicensePlate l7 = pipeline.new LicensePlate(filtredLettersQueue,
-				barrier, 501, 750, BUCHAREST);
-		LicensePlate l8 = pipeline.new LicensePlate(filtredLettersQueue,
-				barrier, 751, 999, BUCHAREST);
-		Observer o = pipeline.new Observer(licensePlates);
+		barrier = new CyclicBarrier(8, new BarrierAction(filtredLettersQueue));
+		Producer p = new Producer(lettersQueue);
+		Filter filter1 = new Filter(lettersQueue, filtredLettersQueue);
+		Filter filter2 = new Filter(lettersQueue, filtredLettersQueue);
+		Filter filter3 = new Filter(lettersQueue, filtredLettersQueue);
+		LicensePlate l1 = new LicensePlate(filtredLettersQueue, barrier, 1,
+				100, REGIONS_A);
+		LicensePlate l2 = new LicensePlate(filtredLettersQueue, barrier, 1,
+				100, REGIONS_B);
+		LicensePlate l3 = new LicensePlate(filtredLettersQueue, barrier, 1,
+				100, REGIONS_C);
+		LicensePlate l4 = new LicensePlate(filtredLettersQueue, barrier, 1,
+				100, REGIONS_D);
+		LicensePlate l5 = new LicensePlate(filtredLettersQueue, barrier, 1,
+				250, BUCHAREST);
+		LicensePlate l6 = new LicensePlate(filtredLettersQueue, barrier, 251,
+				500, BUCHAREST);
+		LicensePlate l7 = new LicensePlate(filtredLettersQueue, barrier, 501,
+				750, BUCHAREST);
+		LicensePlate l8 = new LicensePlate(filtredLettersQueue, barrier, 751,
+				999, BUCHAREST);
+		Observer o = new Observer(licensePlates);
 
 		Thread producer = new Thread(p, "producer");
 		producer.start();
@@ -102,7 +100,7 @@ public class LicensePlatePipeline {
 		observer.start();
 	}
 
-	public class Observer implements Runnable {
+	public static class Observer implements Runnable {
 		BlockingQueue<String> licensePlates;
 		BufferedWriter writer;
 
@@ -128,7 +126,7 @@ public class LicensePlatePipeline {
 		}
 	}
 
-	public class Producer implements Runnable {
+	public static class Producer implements Runnable {
 		BlockingQueue<String> queue;
 
 		public Producer(BlockingQueue<String> queue) {
@@ -162,7 +160,7 @@ public class LicensePlatePipeline {
 
 	}
 
-	public class LicensePlate implements Runnable {
+	public static class LicensePlate implements Runnable {
 		String[] regions;
 		int lowerBound;
 		int upperBound;
@@ -205,7 +203,7 @@ public class LicensePlatePipeline {
 
 	}
 
-	public class Filter implements Runnable {
+	public static class Filter implements Runnable {
 		BlockingQueue<String> letters;
 		BlockingQueue<String> filtered;
 
@@ -246,7 +244,7 @@ public class LicensePlatePipeline {
 		}
 	}
 
-	public class BarrierAction implements Runnable {
+	public static class BarrierAction implements Runnable {
 		BlockingQueue<String> queue;
 
 		public BarrierAction(BlockingQueue<String> queue) {

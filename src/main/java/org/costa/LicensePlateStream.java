@@ -42,7 +42,7 @@ public class LicensePlateStream {
     System.out.println(endTime - startTime);
   }
 
-  private static void write(String str) {
+  private static synchronized void write(String str) {
     try {
       writer.write(str);
       writer.newLine();

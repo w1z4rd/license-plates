@@ -16,6 +16,6 @@ LicensePlatePipeline - multiple threaded implementation
 
     * a writer consumes the license plates from that queue and writes them to disk
 
-TODO: implement another version using streams
+LicensePlateStream - parallelStream implementation
 
 reference: https://en.wikipedia.org/wiki/Vehicle_registration_plates_of_Romania

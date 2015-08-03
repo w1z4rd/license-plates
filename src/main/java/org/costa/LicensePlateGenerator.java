@@ -20,21 +20,12 @@ public class LicensePlateGenerator {
   private static final Charset ENCODING = StandardCharsets.UTF_8;
   private static final Path path = Paths.get(OUTPUT_FILE);
 
-  private static String[] alphabet = { "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P",
-      "R", "S", "T", "U", "V", "W", "X", "Y", "Z" };
-  private static String[] regions = { "AB", "AR", "AG", "B", "BC", "BH", "BN", "BT", "BV", "BR", "BZ", "CS", "CL",
-      "CJ", "CT", "CV", "DB", "DJ", "GL", "GR", "GJ", "HR", "HD", "IL", "IS", "IF", "MM", "MH", "MS", "NT", "OT", "PH",
-      "SM", "SJ", "SB", "SV", "TR", "TM", "TL", "VS", "VL", "VN" };
-  private static String[] curseWords = { "MUE", "CUR", "SEX", "PZD", "PLM" };
-
-  public static void main(String[] args) {
+  public static void generate(Generator<String> generator) {
 
     long startTime = System.currentTimeMillis();
-    ICombinatoricsVector<String> originalVector = Factory.createVector(alphabet);
-    Generator<String> gen = Factory.createPermutationWithRepetitionGenerator(originalVector, 3);
-    List<String> lettersList = filterChars(gen);
+    List<String> lettersList = filterChars(generator);
     try (BufferedWriter writer = Files.newBufferedWriter(path, ENCODING)) {
-      for (String region : regions) {
+      for (String region : LicensePlateApp.regions) {
         int upperBound = getUpperBound(region);
         for (int i = 1; i < upperBound; i++) {
           for (String letters : lettersList) {
@@ -48,7 +39,7 @@ public class LicensePlateGenerator {
     }
 
     long endTime = System.currentTimeMillis();
-    System.out.println(endTime - startTime);
+    System.out.println("Serial - " + (endTime - startTime));
   }
 
   private static int getUpperBound(String region) {
@@ -66,7 +57,7 @@ public class LicensePlateGenerator {
       if (!letters.startsWith("I")) {
         if (!letters.startsWith("O")) {
           boolean curse = false;
-          for (String curseWord : curseWords) {
+          for (String curseWord : LicensePlateApp.curseWords) {
             if (letters.equals(curseWord)) {
               curse = true;
             }

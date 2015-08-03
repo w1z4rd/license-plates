@@ -8,9 +8,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
-import org.paukov.combinatorics.Factory;
 import org.paukov.combinatorics.Generator;
 import org.paukov.combinatorics.ICombinatoricsVector;
 
@@ -21,25 +24,18 @@ public class LicensePlateStream {
   private static final Path path = Paths.get(OUTPUT_FILE);
   private static BufferedWriter writer;
 
-  private static String[] alphabet = { "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P",
-      "R", "S", "T", "U", "V", "W", "X", "Y", "Z" };
-  private static final String[] curseWords = { "MUE", "CUR", "SEX", "PZD", "PLM" };
-  private static String[] regions = { "AB", "AR", "AG", "B", "BC", "BH", "BN", "BT", "BV", "BR", "BZ", "CS", "CL",
-      "CJ", "CT", "CV", "DB", "DJ", "GL", "GR", "GJ", "HR", "HD", "IL", "IS", "IF", "MM", "MH", "MS", "NT", "OT", "PH",
-      "SM", "SJ", "SB", "SV", "TR", "TM", "TL", "VS", "VL", "VN" };
-
-  public static void main(String[] args) {
+  public static void generate(Generator<String> generator) {
     long startTime = System.currentTimeMillis();
     try {
       writer = Files.newBufferedWriter(path, ENCODING);
     } catch (IOException ioe) {
       ioe.printStackTrace();
     }
-    List<String> letters = getLetters();
+    List<String> letters = getLetters(generator);
     letters.parallelStream().filter(s -> filterLetters(s)).map(s -> createPlates(s)).flatMap(list -> list.stream())
         .forEach(LicensePlateStream::write);
     long endTime = System.currentTimeMillis();
-    System.out.println(endTime - startTime);
+    System.out.println("Streams - " + (endTime - startTime));
   }
 
   private static synchronized void write(String str) {
@@ -49,17 +45,17 @@ public class LicensePlateStream {
     } catch (IOException ioe) {
       ioe.printStackTrace();
     }
-
   }
 
-  private static List<String> createPlates(String letters) {
-    List<String> list = new ArrayList<String>();
-    for (String region : regions) {
-      for (int i = 1; i < getUpperBound(region); i++) {
-        list.add(String.format("%s-%02d-%s", new Object[] { region, Integer.valueOf(i), letters }));
-      }
-    }
-    return list;
+  private static ConcurrentLinkedQueue<String> createPlates(String letters) {
+    ConcurrentLinkedQueue<String> queue = new ConcurrentLinkedQueue<String>();
+    Arrays.asList(LicensePlateApp.regions).parallelStream().forEach(region -> regionPlates(region, letters, queue));
+    return queue;
+  }
+
+  private static void regionPlates(String region, String letters, ConcurrentLinkedQueue<String> queue) {
+    queue.addAll(IntStream.range(1, getUpperBound(region)).parallel()
+        .mapToObj(i -> String.format("%s-%02d-%s", new Object[] { region, i, letters })).collect(Collectors.toList()));
   }
 
   private static int getUpperBound(String region) {
@@ -75,7 +71,7 @@ public class LicensePlateStream {
       return false;
     if (letters.startsWith("O"))
       return false;
-    for (String curseWord : curseWords) {
+    for (String curseWord : LicensePlateApp.curseWords) {
       if (letters.equals(curseWord)) {
         return false;
       }
@@ -83,12 +79,10 @@ public class LicensePlateStream {
     return true;
   }
 
-  private static List<String> getLetters() {
+  private static List<String> getLetters(Generator<String> generator) {
     List<String> letters = new ArrayList<String>();
-    ICombinatoricsVector<String> originalVector = Factory.createVector(alphabet);
-    Generator<String> gen = Factory.createPermutationWithRepetitionGenerator(originalVector, 3);
-    for (ICombinatoricsVector<String> perm : gen) {
-      letters.add(getChars(perm));
+    for (ICombinatoricsVector<String> permutation : generator) {
+      letters.add(getChars(permutation));
     }
     return letters;
   }

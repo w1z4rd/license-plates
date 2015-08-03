@@ -19,30 +19,27 @@ import org.paukov.combinatorics.ICombinatoricsVector;
 
 public class LicensePlatePipeline {
 
-  private static String[] alphabet = { "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P",
-      "R", "S", "T", "U", "V", "W", "X", "Y", "Z" };
   private static final String[] REGIONS_A = { "AB", "AR", "AG", "BC", "BH", "BN", "BT", "BV", "BR", "BZ" };
   private static final String[] REGIONS_B = { "CS", "CL", "CJ", "CT", "CV", "DB", "DJ", "GL", "GR", "GJ" };
   private static final String[] REGIONS_C = { "HR", "HD", "IL", "IS", "IF", "MM", "MH", "MS", "NT", "OT" };
   private static final String[] REGIONS_D = { "PH", "SM", "SJ", "SB", "SV", "TR", "TM", "TL", "VS", "VL", "VN" };
   private static final String BUCHAREST = "B";
-  private static final String[] curseWords = { "MUE", "CUR", "SEX", "PZD", "PLM" };
-  private static volatile BlockingQueue<String> lettersQueue = new LinkedBlockingQueue<>(30000);
-  private static volatile BlockingQueue<String> filtredLettersQueue = new LinkedBlockingQueue<>();
-  private static volatile BlockingQueue<String> licensePlates = new LinkedBlockingQueue<>(82000000);
+  private static BlockingQueue<String> lettersQueue = new LinkedBlockingQueue<>(30000);
+  private static BlockingQueue<String> filtredLettersQueue = new LinkedBlockingQueue<>();
+  private static BlockingQueue<String> licensePlates = new LinkedBlockingQueue<>(82000000);
 
   private static final String OUTPUT_FILE = "target/license_plates_pipeline.txt";
-  private final static Charset ENCODING = StandardCharsets.UTF_8;
-  private final static Path path = Paths.get(OUTPUT_FILE);
+  private static final Charset ENCODING = StandardCharsets.UTF_8;
+  private static final Path path = Paths.get(OUTPUT_FILE);
 
   private static CyclicBarrier barrier;
   private static volatile boolean done = false;
   private static long startTime;
 
-  public static void main(String[] args) {
+  public static void generate(Generator<String> generator) {
     startTime = System.currentTimeMillis();
     barrier = new CyclicBarrier(8, new BarrierAction(filtredLettersQueue));
-    Producer p = new Producer(lettersQueue);
+    Producer p = new Producer(lettersQueue, generator);
     Filter filter1 = new Filter(lettersQueue, filtredLettersQueue);
     Filter filter2 = new Filter(lettersQueue, filtredLettersQueue);
     Filter filter3 = new Filter(lettersQueue, filtredLettersQueue);
@@ -112,17 +109,17 @@ public class LicensePlatePipeline {
 
   public static class Producer implements Runnable {
     BlockingQueue<String> queue;
+    Generator<String> generator;
 
-    public Producer(BlockingQueue<String> queue) {
+    public Producer(BlockingQueue<String> queue, Generator<String> generator) {
       this.queue = queue;
+      this.generator = generator;
     }
 
     @Override
     public void run() {
-      ICombinatoricsVector<String> originalVector = Factory.createVector(alphabet);
-      Generator<String> gen = Factory.createPermutationWithRepetitionGenerator(originalVector, 3);
-      for (ICombinatoricsVector<String> perm : gen) {
-        String letters = getChars(perm);
+      for (ICombinatoricsVector<String> permutation : generator) {
+        String letters = getChars(permutation);
         try {
           queue.put(letters);
         } catch (InterruptedException e) {
@@ -214,7 +211,7 @@ public class LicensePlatePipeline {
         return false;
       if (letters.startsWith("O"))
         return false;
-      for (String curseWord : curseWords) {
+      for (String curseWord : LicensePlateApp.curseWords) {
         if (letters.equals(curseWord)) {
           return false;
         }
@@ -236,7 +233,7 @@ public class LicensePlatePipeline {
         queue.take();
         if (queue.isEmpty()) {
           done = true;
-          System.out.println(System.currentTimeMillis() - startTime);
+          System.out.println("Pipeline - " + (System.currentTimeMillis() - startTime));
         }
       } catch (InterruptedException e) {
         e.printStackTrace();

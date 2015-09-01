@@ -16,7 +16,7 @@ import org.paukov.combinatorics.ICombinatoricsVector;
 
 public class LicensePlateGenerator {
 
-  private static final String OUTPUT_FILE = "target/license_plates.txt";
+  private static final String OUTPUT_FILE = "target/license_plates_serial.txt";
   private static final Charset ENCODING = StandardCharsets.UTF_8;
   private static final Path path = Paths.get(OUTPUT_FILE);
 

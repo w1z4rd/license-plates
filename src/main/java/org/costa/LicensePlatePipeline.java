@@ -17,6 +17,7 @@ import org.paukov.combinatorics.Factory;
 import org.paukov.combinatorics.Generator;
 import org.paukov.combinatorics.ICombinatoricsVector;
 
+//#TODO: fix threads not stoping after completion!!!
 public class LicensePlatePipeline {
 
   private static final String[] REGIONS_A = { "AB", "AR", "AG", "BC", "BH", "BN", "BT", "BV", "BR", "BZ" };
@@ -48,9 +49,9 @@ public class LicensePlatePipeline {
     LicensePlate l3 = new LicensePlate(filtredLettersQueue, barrier, 1, 100, REGIONS_C);
     LicensePlate l4 = new LicensePlate(filtredLettersQueue, barrier, 1, 100, REGIONS_D);
     LicensePlate l5 = new LicensePlate(filtredLettersQueue, barrier, 1, 250, BUCHAREST);
-    LicensePlate l6 = new LicensePlate(filtredLettersQueue, barrier, 251, 500, BUCHAREST);
-    LicensePlate l7 = new LicensePlate(filtredLettersQueue, barrier, 501, 750, BUCHAREST);
-    LicensePlate l8 = new LicensePlate(filtredLettersQueue, barrier, 751, 999, BUCHAREST);
+    LicensePlate l6 = new LicensePlate(filtredLettersQueue, barrier, 250, 500, BUCHAREST);
+    LicensePlate l7 = new LicensePlate(filtredLettersQueue, barrier, 500, 750, BUCHAREST);
+    LicensePlate l8 = new LicensePlate(filtredLettersQueue, barrier, 750, 1000, BUCHAREST);
     Observer o = new Observer(licensePlates);
 
     Thread producer = new Thread(p, "producer");

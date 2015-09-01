@@ -37,18 +37,9 @@ public class LicensePlateApp {
   public static void main(String[] args) {
     final ICombinatoricsVector<String> originalVector = Factory.createVector(LicensePlateApp.alphabet);
     final Generator<String> generator = Factory.createPermutationWithRepetitionGenerator(originalVector, 3);
-    Runnable serial = () -> {
-      LicensePlateGenerator.generate(generator);
-    };
-    Runnable pipeline = () -> {
-      LicensePlatePipeline.generate(generator);
-    };
-    Runnable streams = () -> {
-      LicensePlateStream.generate(generator);
-    };
-    new Thread(serial).start();
-    new Thread(pipeline).start();
-    new Thread(streams).start();
+    LicensePlateGenerator.generate(generator);
+    LicensePlateStream.generate(generator);
+    LicensePlatePipeline.generate(generator);
   }
 
 }
